@@ -135,6 +135,63 @@ class TestBacklogEndpoints:
         for item in data:
             assert item["days_delayed"] >= 0
 
+    def test_backlog_has_purchase_order_field_present(self, client):
+        """Test that every backlog item includes the has_purchase_order flag."""
+        response = client.get("/api/backlog")
+        data = response.json()
+        assert len(data) > 0
+
+        for item in data:
+            assert "has_purchase_order" in item
+            assert isinstance(item["has_purchase_order"], bool)
+
+    def test_backlog_has_purchase_order_matches_purchase_orders_data(self, client):
+        """Test that has_purchase_order is True iff a purchase order references that backlog item.
+
+        Cross-checks the flag against server/data/purchase_orders.json (loaded via
+        server/mock_data.py) rather than assuming a fixed True/False count, so the
+        test stays correct if that dataset changes.
+        """
+        import sys
+        from pathlib import Path
+
+        server_path = Path(__file__).parent.parent.parent / "server"
+        sys.path.insert(0, str(server_path))
+        from mock_data import purchase_orders as raw_purchase_orders
+
+        backlog_ids_with_po = {po["backlog_item_id"] for po in raw_purchase_orders}
+
+        response = client.get("/api/backlog")
+        data = response.json()
+
+        for item in data:
+            expected = item["id"] in backlog_ids_with_po
+            assert item["has_purchase_order"] == expected, \
+                f"Backlog item {item['id']}: expected has_purchase_order={expected}"
+
+    def test_backlog_has_purchase_order_false_when_no_purchase_orders_exist(self, client):
+        """Test that has_purchase_order is False for all items when purchase_orders.json is empty.
+
+        As of writing, server/data/purchase_orders.json contains an empty list, so
+        every backlog item should currently resolve to has_purchase_order=False.
+        This documents/pins that current-data behavior; if purchase_orders.json
+        gains entries this test should be updated alongside it.
+        """
+        import sys
+        from pathlib import Path
+
+        server_path = Path(__file__).parent.parent.parent / "server"
+        sys.path.insert(0, str(server_path))
+        from mock_data import purchase_orders as raw_purchase_orders
+
+        response = client.get("/api/backlog")
+        data = response.json()
+        assert len(data) > 0
+
+        if len(raw_purchase_orders) == 0:
+            for item in data:
+                assert item["has_purchase_order"] is False
+
 
 class TestSpendingEndpoints:
     """Test suite for spending-related endpoints."""
