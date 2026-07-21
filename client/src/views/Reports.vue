@@ -13,7 +13,10 @@
         <div class="card-header">
           <h3 class="card-title">Quarterly Performance</h3>
         </div>
-        <div class="table-container">
+        <div v-if="quarterlyData.length === 0" class="empty-state">
+          No report data available for the selected filters.
+        </div>
+        <div v-else class="table-container">
           <table class="reports-table">
             <thead>
               <tr>
@@ -48,7 +51,10 @@
         <div class="card-header">
           <h3 class="card-title">Monthly Revenue Trend</h3>
         </div>
-        <div class="chart-container">
+        <div v-if="monthlyData.length === 0" class="empty-state">
+          No report data available for the selected filters.
+        </div>
+        <div v-else class="chart-container">
           <div class="bar-chart">
             <div v-for="month in monthlyData" :key="month.month" class="bar-wrapper">
               <div class="bar-container">
@@ -69,7 +75,10 @@
         <div class="card-header">
           <h3 class="card-title">Month-over-Month Analysis</h3>
         </div>
-        <div class="table-container">
+        <div v-if="monthlyData.length === 0" class="empty-state">
+          No report data available for the selected filters.
+        </div>
+        <div v-else class="table-container">
           <table class="reports-table">
             <thead>
               <tr>
@@ -176,8 +185,10 @@ export default {
     })
 
     const bestQuarter = computed(() => {
-      let bestQ = ''
-      let bestRevenue = 0
+      if (quarterlyData.value.length === 0) return 'N/A'
+
+      let bestQ = quarterlyData.value[0].quarter
+      let bestRevenue = quarterlyData.value[0].total_revenue
       for (const q of quarterlyData.value) {
         if (q.total_revenue > bestRevenue) {
           bestRevenue = q.total_revenue
@@ -444,5 +455,15 @@ export default {
   padding: 1rem;
   border-radius: 8px;
   margin: 1rem 0;
+}
+
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.938rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
 }
 </style>

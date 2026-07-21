@@ -362,16 +362,10 @@ def get_quarterly_reports(
 
     for order in filtered_orders:
         order_date = order.get('order_date', '')
-        # Determine quarter
-        if '2025-01' in order_date or '2025-02' in order_date or '2025-03' in order_date:
-            quarter = 'Q1-2025'
-        elif '2025-04' in order_date or '2025-05' in order_date or '2025-06' in order_date:
-            quarter = 'Q2-2025'
-        elif '2025-07' in order_date or '2025-08' in order_date or '2025-09' in order_date:
-            quarter = 'Q3-2025'
-        elif '2025-10' in order_date or '2025-11' in order_date or '2025-12' in order_date:
-            quarter = 'Q4-2025'
-        else:
+        order_month = order_date[:7]
+        # Determine quarter from the shared QUARTER_MAP instead of re-deriving year-specific ranges
+        quarter = next((q for q, months in QUARTER_MAP.items() if order_month in months), None)
+        if quarter is None:
             continue
 
         if quarter not in quarters:
@@ -419,20 +413,20 @@ def get_monthly_trends(
             continue
 
         # Extract month (format: YYYY-MM-DD)
-        month = order_date[:7]  # Gets YYYY-MM
+        order_month = order_date[:7]  # Gets YYYY-MM
 
-        if month not in months:
-            months[month] = {
-                'month': month,
+        if order_month not in months:
+            months[order_month] = {
+                'month': order_month,
                 'order_count': 0,
                 'revenue': 0,
                 'delivered_count': 0
             }
 
-        months[month]['order_count'] += 1
-        months[month]['revenue'] += order.get('total_value', 0)
+        months[order_month]['order_count'] += 1
+        months[order_month]['revenue'] += order.get('total_value', 0)
         if order.get('status') == 'Delivered':
-            months[month]['delivered_count'] += 1
+            months[order_month]['delivered_count'] += 1
 
     # Convert to list and sort
     result = list(months.values())
